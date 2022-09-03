@@ -1,5 +1,5 @@
 cargo build --release
-mkdir Build
+mkdir build
 cd build
 "../target/release/bf_compiler.exe" ../%1
 yasm -f win64 out.asm -o out.obj
