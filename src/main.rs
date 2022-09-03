@@ -53,7 +53,7 @@ fn main()
         {
             Ok(val) => val,
             Err(err) => {
-                eprintln!("ERROR: failed to load file {} with {}", path, err.kind());
+                eprintln!("ERROR: failed to load file {} with {:?}", path, err.kind());
                 return;
             },
         }
@@ -255,7 +255,7 @@ fn main()
 
 
 
-fn setup_asm(file: &mut File)
+fn setup_asm(file: &mut File) // TODO(Johan): use syscalls for linux and libc for windows
 {
     let setup = 
     "
