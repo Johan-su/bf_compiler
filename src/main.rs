@@ -254,7 +254,7 @@ fn main()
 }
 
 
-
+#[cfg(target_os = "windows")]
 fn setup_asm(file: &mut File) // TODO(Johan): use syscalls for linux and libc for windows
 {
     let setup = 
@@ -281,7 +281,7 @@ fn setup_asm(file: &mut File) // TODO(Johan): use syscalls for linux and libc fo
 }
 
 
-
+#[cfg(target_os = "windows")]
 fn setup_end_asm(file: &mut File)
 {
     let setup =
@@ -289,6 +289,79 @@ fn setup_end_asm(file: &mut File)
     pop rbp
     xor rcx, rcx
     call ExitProcess
+    ";
+    file.write(setup.as_bytes()).unwrap();
+}
+
+
+#[cfg(target_os = "linux")]
+fn setup_asm(file: &mut File)
+{
+    let setup = 
+    "
+    bits 64
+    default rel
+
+    segment .data
+    buffer: times 30000 db 0;
+    temp_buffer: times 1 db 0;
+
+    segment .text
+    global main
+    
+    putchar:
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 32
+
+        lea rsi, [temp_buffer]
+        mov rax, 1
+        mov rdi, 1
+        mov [rsi], rcx
+        mov rdx, 1
+        syscall
+        
+        mov rsp, rbp
+        pop rbp
+        ret
+
+    getchar:
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 32
+
+        mov rax, 0
+        mov rdi, 0
+        lea rsi, [temp_buffer]
+        mov rdx, 1
+
+        syscall
+        mov rax, [rsi]
+
+        mov rsp, rbp
+        pop rbp
+        ret
+
+    main:
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 32
+        lea r13, [buffer]
+    ";
+    file.write_all(setup.as_bytes()).unwrap();
+}
+
+
+#[cfg(target_os = "linux")]
+fn setup_end_asm(file: &mut File)
+{
+    let setup =
+    "
+    mov rsp, rbp
+    pop rbp
+    mov rax, 60
+    mov rdi, 0
+    syscall 
     ";
     file.write(setup.as_bytes()).unwrap();
 }
