@@ -10,7 +10,7 @@ this will generate a **out** executable in /build
 
 
 dependencies:
-Rust compiler
+Rust compiler \
 yasm. \
 ld GNU linker \
 or \
