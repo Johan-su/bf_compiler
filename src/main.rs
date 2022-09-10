@@ -255,48 +255,36 @@ fn main()
     setup_end_asm(&mut file);
 
 
-    let mut assemble = if cfg!(target_os = "windows")
     {
-        let mut command = Command::new("cmd");
-        command
+        let mut assemble: Command;
+        let mut link: Command;
+        let mut clean_up: Command;
+    
+        if cfg!(target_os = "windows")
+        {
+            assemble = Command::new("yasm"); 
+            link = Command::new("ld");
+            clean_up = Command::new("rm");
+        }
+        else
+        {
+            assemble = Command::new("yasm");
+            assemble.args(["-f", "elf64", "out.asm", "-o", "out.obj"]);
+    
+    
+            link = Command::new("ld");
+            link.args(["out.obj", "-entry=main", "-o", out_name]);
+    
+    
+            clean_up = Command::new("rm");
+            clean_up.args(["out.asm", "out.obj"]);
+        }
+    
+        assemble.output().expect("failed to assemble");
+        link.output().expect("failed to link");
+        clean_up.output().expect("failed to clean up");
     }
-    else
-    {
-        let mut command = Command::new("yasm");
-        command.args(["-f", "elf64", "out.asm", "-o", "out.obj"]);
-        command
-    };
 
-
-    let mut link = if cfg!(target_os = "windows")
-    {
-        let mut command = Command::new("cmd");
-        command
-    }
-    else
-    {
-        let mut command = Command::new("ld");
-        command.args(["out.obj", "-entry=main", "-o", out_name]);
-        command
-    };
-
-
-    let mut clean_up = if cfg!(target_os = "windows")
-    {
-        let mut command = Command::new("cmd");
-        command
-    }
-    else
-    {
-        let mut command = Command::new("rm");
-        command.args(["out.asm", "out.obj"]);
-        command
-    };
-
-
-    assemble.output().expect("failed to assemble");
-    link.output().expect("failed to link");
-    clean_up.output().expect("failed to clean up");
 
 
 
