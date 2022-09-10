@@ -260,11 +260,19 @@ fn main()
         let mut link: Command;
         let mut clean_up: Command;
     
-        if cfg!(target_os = "windows")
+        if cfg!(target_os = "windows") //TODO(Johan) fix linking and clean up for windows
         {
             assemble = Command::new("yasm"); 
-            link = Command::new("ld");
-            clean_up = Command::new("rm");
+            assemble.args(["-f", "win64", "out.asm", "-o", "out.obj"]);
+
+
+            link = Command::new("(call");
+            link.args(["\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\Tools\\VsDevCmd.bat\"", "-arch=amd64", "||", "call", "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\Common7\\Tools\\VsDevCmd.bat\"", "-arch=amd64)"]);
+            link.arg("&&");
+            link.args(["link", "kernel32.lib", "user32.lib", "ucrt.lib", "shell32.lib", "gdi32.lib", "msvcrt.lib", "/subsystem:console", "out.obj", "/OUT", out_name, ""]);
+
+            clean_up = Command::new("del");
+            //clean_up.args(["out.asm", "out.obj"]);
         }
         else
         {
@@ -293,7 +301,7 @@ fn main()
 
 
 #[cfg(target_os = "windows")]
-fn setup_asm(file: &mut File) // TODO(Johan): use syscalls for linux and libc for windows
+fn setup_asm(file: &mut File)
 {
     let setup = 
     "
