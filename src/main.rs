@@ -3,7 +3,7 @@
 use std::io::Write;
 use std::{env, fs};
 use std::fs::File;
-
+use std::process::Command;
 
 #[derive(PartialEq)]
 enum TokenType
@@ -35,15 +35,19 @@ struct Token
 fn main()
 {
     let args: Vec<String> = env::args().collect();
+    let pwd: &String = &args[0];
 
-    if !(args.len() >= 2) {
-        eprintln!("ERROR: did not specify input file path");
+    if (args.len() < 3) {
+        eprintln!("Usage: {} <input file path> <output file name>", pwd);
         return;
     }
-
-
-
     let path: &String = &args[1];
+    let out_name: &String = &args[2];
+
+
+
+
+
 
     let file_content: String =
     {
@@ -251,6 +255,52 @@ fn main()
     setup_end_asm(&mut file);
 
 
+    let mut assemble = if cfg!(target_os = "windows")
+    {
+        let mut command = Command::new("cmd");
+        command
+    }
+    else
+    {
+        let mut command = Command::new("yasm");
+        command.args(["-f", "elf64", "out.asm", "-o", "out.obj"]);
+        command
+    };
+
+
+    let mut link = if cfg!(target_os = "windows")
+    {
+        let mut command = Command::new("cmd");
+        command
+    }
+    else
+    {
+        let mut command = Command::new("ld");
+        command.args(["out.obj", "-entry=main", "-o", out_name]);
+        command
+    };
+
+
+    let mut clean_up = if cfg!(target_os = "windows")
+    {
+        let mut command = Command::new("cmd");
+        command
+    }
+    else
+    {
+        let mut command = Command::new("rm");
+        command.args(["out.asm", "out.obj"]);
+        command
+    };
+
+
+    assemble.output().expect("failed to assemble");
+    link.output().expect("failed to link");
+    clean_up.output().expect("failed to clean up");
+
+
+
+    return;
 }
 
 
