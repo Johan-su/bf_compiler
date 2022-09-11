@@ -8,4 +8,4 @@ dependencies:
 yasm. \
 ld (GNU linker) \
 or \
-link (Windows linker) comes with Visual C++
+link (Windows linker) version (2019/2022) comes with Visual C++ 
