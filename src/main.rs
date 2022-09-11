@@ -254,50 +254,84 @@ fn main()
     }
     setup_end_asm(&mut file);
 
-
-    {
-        let mut assemble: Command;
-        let mut link: Command;
-        let mut clean_up: Command;
-    
-        if cfg!(target_os = "windows") //TODO(Johan) fix linking and clean up for windows
-        {
-            assemble = Command::new("yasm"); 
-            assemble.args(["-f", "win64", "out.asm", "-o", "out.obj"]);
-
-
-            link = Command::new("(call");
-            link.args(["\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\Common7\\Tools\\VsDevCmd.bat\"", "-arch=amd64", "||", "call", "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\Common7\\Tools\\VsDevCmd.bat\"", "-arch=amd64)"]);
-            link.arg("&&");
-            link.args(["link", "kernel32.lib", "user32.lib", "ucrt.lib", "shell32.lib", "gdi32.lib", "msvcrt.lib", "/subsystem:console", "out.obj", "/OUT", out_name, ""]);
-
-            clean_up = Command::new("del");
-            //clean_up.args(["out.asm", "out.obj"]);
-        }
-        else
-        {
-            assemble = Command::new("yasm");
-            assemble.args(["-f", "elf64", "out.asm", "-o", "out.obj"]);
-    
-    
-            link = Command::new("ld");
-            link.args(["out.obj", "-entry=main", "-o", out_name]);
-    
-    
-            clean_up = Command::new("rm");
-            clean_up.args(["out.asm", "out.obj"]);
-        }
-    
-        assemble.output().expect("failed to assemble");
-        link.output().expect("failed to link");
-        clean_up.output().expect("failed to clean up");
-    }
-
-
+    assemble_link_clean(out_name);
 
 
     return;
 }
+
+
+#[cfg(target_os = "windows")]
+fn assemble_link_clean(out_name: &String)
+{
+    use std::os::windows::process::CommandExt;
+    
+    let mut assemble: Command;
+    let mut link: Command;
+    let mut clean_up: Command;
+    
+    assemble = Command::new("yasm"); 
+    assemble.args(["-f", "win64", "out.asm", "-o", "out.obj"]);
+    
+    
+    
+    
+    /* 
+    because of
+    https://github.com/rust-lang/rust/issues/29494 
+    https://stackoverflow.com/questions/44757893/cmd-c-doesnt-work-in-rust-when-command-includes-spaces
+    https://internals.rust-lang.org/t/std-process-on-windows-is-escaping-raw-literals-which-causes-problems-with-chaining-commands/8163/7
+    raw_arg have to be used instead of arg
+    */
+    let vs2022_path_in_quotes = r#""C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat""#;
+    let vs2019_path_in_quotes = r#""C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\Common7\Tools\VsDevCmd.bat""#;
+    
+    
+    let link_arg = "/C (( call ".to_owned() + vs2022_path_in_quotes + " -arch=amd64 ) || ( call " + vs2019_path_in_quotes + " -arch=amd64 )) && link kernel32.lib user32.lib ucrt.lib shell32.lib gdi32.lib msvcrt.lib /subsystem:console out.obj /OUT:" + out_name;
+    
+    link = Command::new("cmd");
+    link.raw_arg(link_arg);
+
+    clean_up = Command::new("cmd");
+    clean_up.raw_arg("/C del out.asm out.obj");
+
+
+    assemble.output().expect("failed to assemble with yasm");
+    //assert_eq!(assemble.status().is_ok(), true); // .status() prints
+
+    link.output().expect("failed to link with link");
+    //assert_eq!(link.status().is_ok(), true);
+
+    clean_up.output().expect("failed to clean up with del");
+    //assert_eq!(clean_up.status().is_ok(), true);
+
+}
+
+
+#[cfg(target_os = "linux")]
+fn assemble_link_clean(out_name: &String)
+{
+    let mut assemble: Command;
+    let mut link: Command;
+    let mut clean_up: Command;
+
+
+    assemble = Command::new("yasm");
+    assemble.args(["-f", "elf64", "out.asm", "-o", "out.obj"]);
+
+
+    link = Command::new("ld");
+    link.args(["out.obj", "-entry=main", "-o", out_name]);
+
+
+    clean_up = Command::new("rm");
+    clean_up.args(["out.asm", "out.obj"]);
+
+    assemble.output().expect("failed to assemble with yasm");
+    link.output().expect("failed to link with ld");
+    clean_up.output().expect("failed to clean up with rm");
+}
+
 
 
 #[cfg(target_os = "windows")]
