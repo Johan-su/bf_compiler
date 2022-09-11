@@ -4,7 +4,7 @@ usage: \
 bf_compiler <input_path> <out_name>
 
 
-dependencies:
+dependencies: \
 yasm. \
 ld (GNU linker) \
 or \
