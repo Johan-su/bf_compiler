@@ -105,53 +105,39 @@ fn main()
                     panic!("Unreachable");
                 },
                 TokenType::Greater => {
-                    let asm = 
-                    "
-                    inc r13
-                    ";
+                    let asm = "inc r13\n";
                     file.write_all(asm.as_bytes()).unwrap();
                 },
                 TokenType::Lesser => {
-                    let asm = 
-                    "
-                    dec r13\n
-                    ";
+                    let asm = "dec r13\n";
                     file.write_all(asm.as_bytes()).unwrap();
                 },
                 TokenType::Plus => {
                     let asm =
-                    "
-                    mov al, [r13]
-                    inc al
-                    mov [r13], al
-                    ";
+                    "mov al, [r13]\n\
+                    inc al\n\
+                    mov [r13], al\n";
                     file.write_all(asm.as_bytes()).unwrap();
 
                 },
                 TokenType::Minus => {
                     let asm =
-                    "
-                    mov al, [r13]
-                    dec al
-                    mov [r13], al
-                    ";
+                    "mov al, [r13]\n\
+                    dec al\n\
+                    mov [r13], al\n";
                     file.write_all(asm.as_bytes()).unwrap();
 
                 },
                 TokenType::Dot => {
                     let asm = 
-                    "
-                    movzx rcx, byte [r13]\n
-                    call putchar\n
-                    ";
+                    "movzx rcx, byte [r13]\n\
+                    call putchar\n";
                     file.write_all(asm.as_bytes()).unwrap();
                 },
                 TokenType::Comma => {
                     let asm =
-                    "
-                    call getchar
-                    mov [r13], rax
-                    ";
+                    "call getchar\n\
+                    mov [r13], rax\n";
                     file.write_all(asm.as_bytes()).unwrap();
                 },
                 TokenType::Rightbracket => {
@@ -195,9 +181,8 @@ fn main()
                     }
 
                     let asm =
-                    "
-                    movzx r12, byte [r13]\n
-                    cmp r12, 0\n
+                    "movzx r12, byte [r13]\n\
+                    cmp r12, 0\n\
                     je while_loop_end".to_string() + &left_bracket.row.to_string() + "_" + &left_bracket.col.to_string() + "\n" +
                     "while_loop_" +                   &token.row.to_string() + "_" + &token.col.to_string() + ":\n";
                     
@@ -242,9 +227,8 @@ fn main()
                     }
 
                     let asm = 
-                    "
-                    movzx r12, byte [r13]\n
-                    cmp r12, 0\n
+                    "movzx r12, byte [r13]\n\
+                    cmp r12, 0\n\
                     jne while_loop_".to_owned() + &right_bracket.row.to_string() + "_" + &right_bracket.col.to_string() + "\n" + 
                     "while_loop_end" + &token.row.to_string() + "_" + &token.col.to_string() + ":\n";
                     file.write_all(asm.as_bytes()).unwrap();
@@ -333,30 +317,27 @@ fn assemble_link_clean(out_name: &String)
 }
 
 
-
 #[cfg(target_os = "windows")]
 fn setup_asm(file: &mut File)
 {
     let setup = 
-    "
-    bits 64
-    default rel
-
-    segment .data
-    buffer: times 30000 db 0;
-    
-    segment .text
-    global main
-    extern putchar
-    extern getchar
-    extern ExitProcess
-    
-    main:
-    push    rbp
-    mov     rbp, rsp
-    sub     rsp, 32
-    lea r13, [buffer]
-    ";
+    "bits 64\n\
+        default rel\n\
+        \n\
+        segment .data\n\
+        buffer: times 30000 db 0;\n\
+        \n\
+        segment .text\n\
+        global main\n\
+        extern putchar\n\
+        extern getchar\n\
+        extern ExitProcess\n\
+        \n\
+        main:\n\
+        push rbp\n\
+        mov rbp, rsp\n\
+        sub rsp, 32\n\
+        lea r13, [buffer]\n";
     file.write_all(setup.as_bytes()).unwrap();
 }
 
@@ -365,11 +346,9 @@ fn setup_asm(file: &mut File)
 fn setup_end_asm(file: &mut File)
 {
     let setup =
-    "
-    pop rbp
-    xor rcx, rcx
-    call ExitProcess
-    ";
+    "pop rbp\n\
+        xor rcx, rcx\n\
+        call ExitProcess\n";
     file.write(setup.as_bytes()).unwrap();
 }
 
@@ -378,56 +357,54 @@ fn setup_end_asm(file: &mut File)
 fn setup_asm(file: &mut File)
 {
     let setup = 
-    "
-    bits 64
-    default rel
-
-    segment .data
-    buffer: times 30000 db 0;
-    temp_buffer: times 1 db 0;
-
-    segment .text
-    global main
-    
-    putchar:
-        push    rbp
-        mov     rbp, rsp
-        sub     rsp, 32
-
-        lea rsi, [temp_buffer]
-        mov rax, 1
-        mov rdi, 1
-        mov [rsi], rcx
-        mov rdx, 1
-        syscall
-        
-        mov rsp, rbp
-        pop rbp
-        ret
-
-    getchar:
-        push    rbp
-        mov     rbp, rsp
-        sub     rsp, 32
-
-        mov rax, 0
-        mov rdi, 0
-        lea rsi, [temp_buffer]
-        mov rdx, 1
-
-        syscall
-        mov rax, [rsi]
-
-        mov rsp, rbp
-        pop rbp
-        ret
-
-    main:
-        push    rbp
-        mov     rbp, rsp
-        sub     rsp, 32
-        lea r13, [buffer]
-    ";
+    "bits 64\n\
+        default rel\n\
+        \n\
+        segment .data\n\
+        buffer: times 30000 db 0;\n\
+        temp_buffer: times 1 db 0;\n\
+        \n\
+        segment .text\n\
+        global main\n\
+        \n\
+        putchar:\n\
+            push rbp\n\
+            mov rbp, rsp\n\
+            sub rsp, 32\n\
+            \n\
+            lea rsi, [temp_buffer]\n\
+            mov rax, 1\n\
+            mov rdi, 1\n\
+            mov [rsi], rcx\n\
+            mov rdx, 1\n\
+            syscall\n\
+            \n\
+            mov rsp, rbp\n\
+            pop rbp\n\
+            ret\n\
+            \n\
+        getchar:\n\
+            push rbp\n\
+            mov rbp, rsp\n\
+            sub rsp, 32\n\
+            \n\
+            mov rax, 0\n\
+            mov rdi, 0\n\
+            lea rsi, [temp_buffer]\n\
+            mov rdx, 1\n\
+            \n\
+            syscall\n\
+            mov rax, [rsi]\n\
+            \n\
+            mov rsp, rbp\n\
+            pop rbp\n\
+            ret\n\
+            \n\
+        main:\n\
+            push rbp\n\
+            mov rbp, rsp\n\
+            sub rsp, 32\n\
+            lea r13, [buffer]\n";
     file.write_all(setup.as_bytes()).unwrap();
 }
 
@@ -436,12 +413,10 @@ fn setup_asm(file: &mut File)
 fn setup_end_asm(file: &mut File)
 {
     let setup =
-    "
-    mov rsp, rbp
-    pop rbp
-    mov rax, 60
-    mov rdi, 0
-    syscall 
-    ";
+    "mov rsp, rbp\n\
+        pop rbp\n\
+        mov rax, 60\n\
+        mov rdi, 0\n\
+        syscall\n";
     file.write(setup.as_bytes()).unwrap();
 }
